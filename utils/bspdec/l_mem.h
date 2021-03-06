@@ -39,7 +39,8 @@ void *GetMemory(unsigned long size);
 //allocate a memory block of the given size
 void *GetMemoryDebug(unsigned long size, char *label, char *file, int line);
 //allocate a memory block of the given size and clear it
-void *GetClearedMemoryDebug(unsigned long size, char *label, char *file, int line);
+void *GetClearedMemoryDebug(unsigned long size, char *label, char *file,
+                            int line);
 //
 void PrintMemoryLabels(void);
 #endif //MEMDEBUG
@@ -48,4 +49,3 @@ void FreeMemory(void *ptr);
 int MemorySize(void *ptr);
 void PrintMemorySize(unsigned long size);
 int TotalAllocatedMemory(void);
-

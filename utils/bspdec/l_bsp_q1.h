@@ -31,9 +31,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #define	Q1_MAX_MAP_ENTSTRING	65536
 
 #define	Q1_MAX_MAP_PLANES		8192
-#define	Q1_MAX_MAP_NODES		32767		// because negative shorts are contents
-#define	Q1_MAX_MAP_CLIPNODES	32767		//
-#define	Q1_MAX_MAP_LEAFS		32767		// 
+#define	Q1_MAX_MAP_NODES		32767   // because negative shorts are contents
+#define	Q1_MAX_MAP_CLIPNODES	32767   //
+#define	Q1_MAX_MAP_LEAFS		32767   //
 #define	Q1_MAX_MAP_VERTS		65535
 #define	Q1_MAX_MAP_FACES		65535
 #define	Q1_MAX_MAP_MARKSURFACES 65535
@@ -56,7 +56,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef struct
 {
-	int fileofs, filelen;
+  int fileofs, filelen;
 } q1_lump_t;
 
 #define	Q1_LUMP_ENTITIES	0
@@ -79,37 +79,37 @@ typedef struct
 
 typedef struct
 {
-	float		mins[3], maxs[3];
-	float		origin[3];
-	int		headnode[Q1_MAX_MAP_HULLS];
-	int		visleafs;		// not including the solid leaf 0
-	int		firstface, numfaces;
+  float mins[3], maxs[3];
+  float origin[3];
+  int headnode[Q1_MAX_MAP_HULLS];
+  int visleafs;                 // not including the solid leaf 0
+  int firstface, numfaces;
 } q1_dmodel_t;
 
 typedef struct
 {
-	int			version;	
-	q1_lump_t	lumps[Q1_HEADER_LUMPS];
+  int version;
+  q1_lump_t lumps[Q1_HEADER_LUMPS];
 } q1_dheader_t;
 
 typedef struct
 {
-	int		nummiptex;
-	int		dataofs[4];		// [nummiptex]
+  int nummiptex;
+  int dataofs[4];               // [nummiptex]
 } q1_dmiptexlump_t;
 
 #define	MIPLEVELS	4
 typedef struct q1_miptex_s
 {
-	char		name[16];
-	unsigned	width, height;
-	unsigned	offsets[MIPLEVELS];		// four mip maps stored
+  char name[16];
+  unsigned width, height;
+  unsigned offsets[MIPLEVELS];  // four mip maps stored
 } q1_miptex_t;
 
 
 typedef struct
 {
-	float	point[3];
+  float point[3];
 } q1_dvertex_t;
 
 
@@ -125,9 +125,9 @@ typedef struct
 
 typedef struct
 {
-	float	normal[3];
-	float	dist;
-	int		type;		// PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
+  float normal[3];
+  float dist;
+  int type;                     // PLANE_X - PLANE_ANYZ ?remove? trivial to regenerate
 } q1_dplane_t;
 
 
@@ -142,49 +142,49 @@ typedef struct
 // !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
-	int		planenum;
-	short		children[2];	// negative numbers are -(leafs+1), not nodes
-	short		mins[3];		// for sphere culling
-	short		maxs[3];
-	unsigned short	firstface;
-	unsigned short	numfaces;	// counting both sides
+  int planenum;
+  short children[2];            // negative numbers are -(leafs+1), not nodes
+  short mins[3];                // for sphere culling
+  short maxs[3];
+  unsigned short firstface;
+  unsigned short numfaces;      // counting both sides
 } q1_dnode_t;
 
 typedef struct
 {
-	int		planenum;
-	short		children[2];	// negative numbers are contents
+  int planenum;
+  short children[2];            // negative numbers are contents
 } q1_dclipnode_t;
 
 
 typedef struct q1_texinfo_s
 {
-	float		vecs[2][4];		// [s/t][xyz offset]
-	int		miptex;
-	int		flags;
+  float vecs[2][4];             // [s/t][xyz offset]
+  int miptex;
+  int flags;
 } q1_texinfo_t;
-#define	TEX_SPECIAL		1		// sky or slime, no lightmap or 256 subdivision
+#define	TEX_SPECIAL		1       // sky or slime, no lightmap or 256 subdivision
 
 // note that edge 0 is never used, because negative edge nums are used for
 // counterclockwise use of the edge in a face
 typedef struct
 {
-	unsigned short	v[2];		// vertex numbers
+  unsigned short v[2];          // vertex numbers
 } q1_dedge_t;
 
 #define	MAXLIGHTMAPS	4
 typedef struct
 {
-	short		planenum;
-	short		side;
+  short planenum;
+  short side;
 
-	int		firstedge;		// we must support > 64k edges
-	short		numedges;	
-	short		texinfo;
+  int firstedge;                // we must support > 64k edges
+  short numedges;
+  short texinfo;
 
 // lighting info
-	byte		styles[MAXLIGHTMAPS];
-	int		lightofs;		// start of [numstyles*surfsize] samples
+  byte styles[MAXLIGHTMAPS];
+  int lightofs;                 // start of [numstyles*surfsize] samples
 } q1_dface_t;
 
 
@@ -194,22 +194,22 @@ typedef struct
 #define	AMBIENT_SLIME	2
 #define	AMBIENT_LAVA	3
 
-#define	NUM_AMBIENTS			4		// automatic ambient sounds
+#define	NUM_AMBIENTS			4       // automatic ambient sounds
 
 // leaf 0 is the generic Q1_CONTENTS_SOLID leaf, used for all solid areas
 // all other leafs need visibility info
 typedef struct
 {
-	int				contents;
-	int				visofs;				// -1 = no visibility info
+  int contents;
+  int visofs;                   // -1 = no visibility info
 
-	short				mins[3];			// for frustum culling
-	short				maxs[3];
+  short mins[3];                // for frustum culling
+  short maxs[3];
 
-	unsigned short	firstmarksurface;
-	unsigned short	nummarksurfaces;
+  unsigned short firstmarksurface;
+  unsigned short nummarksurfaces;
 
-	byte		ambient_level[NUM_AMBIENTS];
+  byte ambient_level[NUM_AMBIENTS];
 } q1_dleaf_t;
 
 //============================================================================
@@ -218,50 +218,50 @@ typedef struct
 
 // the utilities get to be lazy and just use large static arrays
 
-extern	int				q1_nummodels;
-extern	q1_dmodel_t		*q1_dmodels;//[MAX_MAP_MODELS];
+extern int q1_nummodels;
+extern q1_dmodel_t *q1_dmodels; //[MAX_MAP_MODELS];
 
-extern	int				q1_visdatasize;
-extern	byte				*q1_dvisdata;//[MAX_MAP_VISIBILITY];
+extern int q1_visdatasize;
+extern byte *q1_dvisdata;       //[MAX_MAP_VISIBILITY];
 
-extern	int				q1_lightdatasize;
-extern	byte				*q1_dlightdata;//[MAX_MAP_LIGHTING];
+extern int q1_lightdatasize;
+extern byte *q1_dlightdata;     //[MAX_MAP_LIGHTING];
 
-extern	int				q1_texdatasize;
-extern	byte				*q1_dtexdata;//[MAX_MAP_MIPTEX]; // (dmiptexlump_t)
+extern int q1_texdatasize;
+extern byte *q1_dtexdata;       //[MAX_MAP_MIPTEX]; // (dmiptexlump_t)
 
-extern	int				q1_entdatasize;
-extern	char				*q1_dentdata;//[MAX_MAP_ENTSTRING];
+extern int q1_entdatasize;
+extern char *q1_dentdata;       //[MAX_MAP_ENTSTRING];
 
-extern	int				q1_numleafs;
-extern	q1_dleaf_t		*q1_dleafs;//[MAX_MAP_LEAFS];
+extern int q1_numleafs;
+extern q1_dleaf_t *q1_dleafs;   //[MAX_MAP_LEAFS];
 
-extern	int				q1_numplanes;
-extern	q1_dplane_t		*q1_dplanes;//[MAX_MAP_PLANES];
+extern int q1_numplanes;
+extern q1_dplane_t *q1_dplanes; //[MAX_MAP_PLANES];
 
-extern	int				q1_numvertexes;
-extern	q1_dvertex_t	*q1_dvertexes;//[MAX_MAP_VERTS];
+extern int q1_numvertexes;
+extern q1_dvertex_t *q1_dvertexes;      //[MAX_MAP_VERTS];
 
-extern	int				q1_numnodes;
-extern	q1_dnode_t		*q1_dnodes;//[MAX_MAP_NODES];
+extern int q1_numnodes;
+extern q1_dnode_t *q1_dnodes;   //[MAX_MAP_NODES];
 
-extern	int				q1_numtexinfo;
-extern	q1_texinfo_t	*q1_texinfo;//[MAX_MAP_TEXINFO];
+extern int q1_numtexinfo;
+extern q1_texinfo_t *q1_texinfo;        //[MAX_MAP_TEXINFO];
 
-extern	int				q1_numfaces;
-extern	q1_dface_t		*q1_dfaces;//[MAX_MAP_FACES];
+extern int q1_numfaces;
+extern q1_dface_t *q1_dfaces;   //[MAX_MAP_FACES];
 
-extern	int				q1_numclipnodes;
-extern	q1_dclipnode_t	*q1_dclipnodes;//[MAX_MAP_CLIPNODES];
+extern int q1_numclipnodes;
+extern q1_dclipnode_t *q1_dclipnodes;   //[MAX_MAP_CLIPNODES];
 
-extern	int				q1_numedges;
-extern	q1_dedge_t		*q1_dedges;//[MAX_MAP_EDGES];
+extern int q1_numedges;
+extern q1_dedge_t *q1_dedges;   //[MAX_MAP_EDGES];
 
-extern	int				q1_nummarksurfaces;
-extern	unsigned short	*q1_dmarksurfaces;//[MAX_MAP_MARKSURFACES];
+extern int q1_nummarksurfaces;
+extern unsigned short *q1_dmarksurfaces;        //[MAX_MAP_MARKSURFACES];
 
-extern	int				q1_numsurfedges;
-extern	int				*q1_dsurfedges;//[MAX_MAP_SURFEDGES];
+extern int q1_numsurfedges;
+extern int *q1_dsurfedges;      //[MAX_MAP_SURFEDGES];
 
 
 void Q1_AllocMaxBSP(void);
@@ -270,6 +270,6 @@ void Q1_LoadBSPFile(char *filename, int offset, int length);
 void Q1_WriteBSPFile(char *filename);
 void Q1_PrintBSPFileSizes(void);
 void Q1_ParseEntities(void);
-void Q1_UnparseEntities(void);
+char *Q1_UnparseEntities(int *size);
 
 #endif

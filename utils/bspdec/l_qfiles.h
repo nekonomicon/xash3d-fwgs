@@ -49,7 +49,7 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 //maximum path length
 #ifndef _MAX_PATH
-	#define _MAX_PATH				1024
+#define _MAX_PATH				1024
 #endif
 
 //for Sin packs
@@ -58,21 +58,21 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 typedef struct
 {
-	char	name[MAX_PAK_FILENAME_LENGTH];
-	int	filepos, filelen;
+  char name[MAX_PAK_FILENAME_LENGTH];
+  int filepos, filelen;
 } dsinpackfile_t;
 
 typedef struct quakefile_s
 {
-	char pakfile[_MAX_PATH];
-	char filename[_MAX_PATH];
-	char origname[_MAX_PATH];
-	int zipfile;
-	int type;
-	int offset;
-	int length;
-	unz_s zipinfo;
-	struct quakefile_s *next;
+  char pakfile[_MAX_PATH];
+  char filename[_MAX_PATH];
+  char origname[_MAX_PATH];
+  int zipfile;
+  int type;
+  int offset;
+  int length;
+  unz_s zipinfo;
+  struct quakefile_s *next;
 } quakefile_t;
 
 //returns the file extension for the given type
@@ -86,6 +86,6 @@ int FileFilter(char *filter, char *filename, int casesensitive);
 //find Quake files using the given filter
 quakefile_t *FindQuakeFiles(char *filter);
 //load the given Quake file, returns the length of the file
-int LoadQuakeFile(quakefile_t *qf, void **bufferptr);
+int LoadQuakeFile(quakefile_t * qf, void **bufferptr);
 //read part of a Quake file into the buffer
-int ReadQuakeFile(quakefile_t *qf, void *buffer, int offset, int length);
+int ReadQuakeFile(quakefile_t * qf, void *buffer, int offset, int length);
