@@ -26,6 +26,7 @@ GNU General Public License for more details.
 
 static const char png_sign[] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'};
 static const char ihdr_sign[] = {'I', 'H', 'D', 'R'};
+static const char plte_sign[] = {'P', 'L', 'T', 'E'};
 static const char idat_sign[] = {'I', 'D', 'A', 'T'};
 static const char iend_sign[] = {'I', 'E', 'N', 'D'};
 static const int  iend_crc32 = 0xAE426082;
@@ -40,6 +41,7 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 	int		ret;
 	short		p, a, b, c, pa, pb, pc;
 	byte		*buf_p, *pixbuf, *raw, *prior, *idat_buf = NULL, *uncompressed_buffer = NULL, *rowend;
+	byte		*pallete = NULL;
 	uint	 	chunk_len, crc32, crc32_check, oldsize = 0, newsize = 0, rowsize;
 	uint	 	uncompressed_size, pixel_size, i, y, filter_type, chunk_sign;
 	qboolean 	has_iend_chunk = false;
@@ -94,9 +96,13 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 		return false;
 	}
 
-	if( png_hdr.ihdr_chunk.colortype != PNG_CT_RGB && png_hdr.ihdr_chunk.colortype != PNG_CT_RGBA )
+	if( !( png_hdr.ihdr_chunk.colortype == PNG_CT_RGB
+	    || png_hdr.ihdr_chunk.colortype == PNG_CT_RGBA
+	    || png_hdr.ihdr_chunk.colortype == PNG_CT_GREY
+	    || png_hdr.ihdr_chunk.colortype == PNG_CT_ALPHA
+	    || png_hdr.ihdr_chunk.colortype == PNG_CT_PALLETE ) )
 	{
-		Con_DPrintf( S_WARN "Image_LoadPNG: Only 8-bit RGB and RGBA images is supported (%s)\n", name );
+		Con_DPrintf( S_WARN "Image_LoadPNG: Unknown color type (%s)\n", name );
 		return false;
 	}
 
@@ -158,8 +164,13 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 		// move pointer
 		buf_p += sizeof( chunk_sign );
 
+		// find pallete for indexed image
+		if( !memcmp( buf_p, plte_sign, sizeof( plte_sign ) ) )
+		{
+			pallete = buf_p + sizeof( plte_sign );
+		}
 		// get all IDAT chunks data
-		if( !memcmp( buf_p, idat_sign, sizeof( idat_sign ) ) )
+		else if( !memcmp( buf_p, idat_sign, sizeof( idat_sign ) ) )
 		{
 			newsize = oldsize + chunk_len;
 			idat_buf = (byte *)Mem_Realloc( host.imagepool, idat_buf, newsize );
@@ -193,6 +204,13 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 		buf_p += sizeof( crc32 );
 	}
 
+	if( png_hdr.ihdr_chunk.colortype == PNG_CT_PALLETE && !pallete )
+	{
+		Con_DPrintf( S_ERROR "Image_LoadPNG: PLTE chunk not found (%s)\n", name );
+		Mem_Free( idat_buf );
+		return false;
+	}
+
 	if( !has_iend_chunk )
 	{
 		Con_DPrintf( S_ERROR "Image_LoadPNG: IEND chunk not found (%s)\n", name );
@@ -215,6 +233,13 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 
 	switch( png_hdr.ihdr_chunk.colortype )
 	{
+	case PNG_CT_GREY:
+	case PNG_CT_PALLETE:
+		pixel_size = 1;
+		break;
+	case PNG_CT_ALPHA:
+		pixel_size = 2;
+		break;
 	case PNG_CT_RGB:
 		pixel_size = 3;
 		break;
@@ -231,9 +256,12 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 	image.width = png_hdr.ihdr_chunk.width;
 	image.height = png_hdr.ihdr_chunk.height;
 	image.size = image.height * image.width * 4;
-	image.flags |= IMAGE_HAS_COLOR;
 
-	if( png_hdr.ihdr_chunk.colortype == PNG_CT_RGBA )
+	if( !(png_hdr.ihdr_chunk.colortype == PNG_CT_GREY
+	  || png_hdr.ihdr_chunk.colortype == PNG_CT_ALPHA ) )
+		image.flags |= IMAGE_HAS_COLOR;
+
+	if( png_hdr.ihdr_chunk.colortype & PNG_CT_ALPHA )
 		image.flags |= IMAGE_HAS_ALPHA;
 
 	image.depth = 1;
@@ -275,7 +303,7 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 
 	raw = uncompressed_buffer;
 
-	if( png_hdr.ihdr_chunk.colortype == PNG_CT_RGB )
+	if( png_hdr.ihdr_chunk.colortype != PNG_CT_RGBA )
 		prior = pixbuf = raw;
 
 	filter_type = *raw++;
@@ -377,12 +405,12 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 		prior = pixbuf;
 	}
 
-	// convert RGB-to-RGBA
-	if( png_hdr.ihdr_chunk.colortype == PNG_CT_RGB )
-	{
-		pixbuf = image.rgba;
-		raw = uncompressed_buffer;
+	pixbuf = image.rgba;
+	raw = uncompressed_buffer;
 
+	switch( png_hdr.ihdr_chunk.colortype )
+	{
+	case PNG_CT_RGB:
 		for( y = 0; y < image.height; y++ )
 		{
 			rowend = raw + rowsize;
@@ -394,6 +422,48 @@ qboolean Image_LoadPNG( const char *name, const byte *buffer, fs_offset_t filesi
 				*pixbuf++ = 0xFF;
 			}
 		}
+		break;
+	case PNG_CT_GREY:
+		for( y = 0; y < image.height; y++ )
+		{
+			rowend = raw + rowsize;
+			for( ; raw < rowend; raw += pixel_size )
+			{
+				*pixbuf++ = raw[0];
+				*pixbuf++ = raw[0];
+				*pixbuf++ = raw[0];
+				*pixbuf++ = 0xFF;
+			}
+		}
+		break;
+	case PNG_CT_ALPHA:
+		for( y = 0; y < image.height; y++ )
+		{
+			rowend = raw + rowsize;
+			for( ; raw < rowend; raw += pixel_size )
+			{
+				*pixbuf++ = raw[0];
+				*pixbuf++ = raw[0];
+				*pixbuf++ = raw[0];
+				*pixbuf++ = raw[1];
+			}
+		}
+		break;
+	case PNG_CT_PALLETE:
+		for( y = 0; y < image.height; y++ )
+		{
+			rowend = raw + rowsize;
+			for( ; raw < rowend; raw += pixel_size )
+			{
+				*pixbuf++ = pallete[raw[0] + 0];
+				*pixbuf++ = pallete[raw[0] + 1];
+				*pixbuf++ = pallete[raw[0] + 2];
+				*pixbuf++ = 0xFF;
+			}
+		}
+		break;
+	default:
+		break;
 	}
 
 	Mem_Free( uncompressed_buffer );
