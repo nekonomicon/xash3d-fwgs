@@ -639,6 +639,28 @@ char *va( const char *format, ... )
 	return s;
 }
 
+char *sva( char *buffer, const char *format, ... )
+{
+	va_list args;
+
+	va_start( args, format );
+	Q_vsnprintf( buffer, 99999, format, args );
+	va_end( args );
+
+	return buffer;
+}
+
+char *snva( char *buffer, size_t buffersize, const char *format, ... )
+{
+	va_list args;
+
+	va_start( args, format );
+	Q_vsnprintf( buffer, buffersize, format, args );
+	va_end( args );
+
+	return buffer;
+}
+
 /*
 ============
 COM_FileBase
