@@ -27,6 +27,7 @@ static void R_ParseDetailTextures( const char *filename )
 	string	detail_path;
 	float	xScale, yScale;
 	texture_t	*tex;
+	size_t	len;
 	int	i;
 
 	afile = gEngfuncs.fsapi->LoadFile( filename, NULL, false );
@@ -46,14 +47,14 @@ static void R_ParseDetailTextures( const char *filename )
 			// NOTE: COM_ParseFile handled some symbols seperately
 			// this code will be fix it
 			pfile = COM_ParseFile( pfile, token, sizeof( token ));
-			Q_strncat( texname, "{", sizeof( texname ));
-			Q_strncat( texname, token, sizeof( texname ));
+			len = Q_strncpy( texname, "{", sizeof( texname ));
+			Q_strncpy( &texname[len], token, sizeof( texname ) - len);
 		}
 		else Q_strncpy( texname, token, sizeof( texname ));
 
 		// read detailtexture name
 		pfile = COM_ParseFile( pfile, token, sizeof( token ));
-		Q_strncat( detail_texname, token, sizeof( detail_texname ));
+		len = Q_strncpy( detail_texname, token, sizeof( detail_texname ));
 
 		// trying the scales or '{'
 		pfile = COM_ParseFile( pfile, token, sizeof( token ));
@@ -61,9 +62,9 @@ static void R_ParseDetailTextures( const char *filename )
 		// read second part of detailtexture name
 		if( token[0] == '{' )
 		{
-			Q_strncat( detail_texname, token, sizeof( detail_texname ));
+			len += Q_strncpy( &detail_texname[len], token, sizeof( detail_texname ) - len );
 			pfile = COM_ParseFile( pfile, token, sizeof( token )); // read scales
-			Q_strncat( detail_texname, token, sizeof( detail_texname ));
+			Q_strncpy( &detail_texname[len], token, sizeof( detail_texname ) - len );
 			pfile = COM_ParseFile( pfile, token, sizeof( token )); // parse scales
 		}
 

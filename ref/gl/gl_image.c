@@ -1570,6 +1570,7 @@ int GL_LoadTextureArray( const char **names, int flags )
 	uint		picFlags = 0;
 	char		name[256];
 	gl_texture_t	*tex;
+	size_t		len = 0;
 	uint		i, j;
 
 	if( !names || !names[0] || !glw_state.initialized )
@@ -1586,11 +1587,11 @@ int GL_LoadTextureArray( const char **names, int flags )
 	for( i = 0; i < numLayers; i++ )
 	{
 		COM_FileBase( names[i], basename );
-		Q_strncat( name, basename, sizeof( name ) );
-		if( i != ( numLayers - 1 )) Q_strncat( name, "|", sizeof( name ));
+		len += Q_strncpy( &name[len], basename, sizeof( name ) - len );
+		if( i != ( numLayers - 1 )) len += Q_strncpy( &name[len], "|", sizeof( name ) - len );
 	}
 
-	Q_strncat( name, va( "[%i]", numLayers ), sizeof( name ));
+	Q_snprintf( &name[len], sizeof( name ) - len, "[%i]", numLayers );
 
 	if( !GL_CheckTexName( name ))
 		return 0;
