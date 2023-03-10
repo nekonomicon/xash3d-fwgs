@@ -1,7 +1,19 @@
-# Server porting
+# Self-made port
+## Compatibility with RISC architectures
+### Unaligned access
+Unaligned access on i386 causes only perfomance penalty, but on RISC it can cause unstable work.
+For HLSDK at least you need such [fix](https://github.com/FWGS/halflife/commit/7bfefe86e35d67867ae7af830ac1fc38f2908360) in util.cpp
+
+### Signed chars
+`char` type defined as signed for x86 and as unsigned for arm.
+And sometimes such difference can break logic.
+As a solution you can use `signed char` type in code directly or use `-fsigned-char` option for gcc/clang compilers.
+For HLSDK at least you need such [fix](https://github.com/FWGS/hlsdk-portable/commit/1ca34fcb4381682bd517612b530db22a1354a795) in nodes.cpp/.h.
+
+## Porting server-side code
 Original valve's server code was compatible with linux and gcc 2.x.
 Newer gcc versions have restriction which breaks build.
-Now, to make it building with gcc 4.x, you need do following:
+Now, to make it building with gcc 4.x+ or clang, you need to do following:
 * Go to cbase.h and redefine macros as following
 ```
 #define SetThink( a ) m_pfnThink = static_cast <void (CBaseEntity::*)(void)> (&a)
@@ -18,58 +30,58 @@ Now, to make it building with gcc 4.x, you need do following:
 * Replace all SetThink(NULL), SetTouch(NULL), setUse(NULL) and SetBlocked(NULL) by ResetThink(), ResetTouch(), ResetUse() and ResetBlocked()
 * Sometimes you may need to add #include <ctype.h> if functions tolower or isspace are missing
 
-# Client porting
+## Porting Client-side code
 
-## VGUI library
-
-Valve's client uses vgui library which is available only on x86 systems and has big amount of mistakes in headers. The best and simplest way of porting is removing VGUI dependency at all.
-Most singleplayer mods don't really use VGUI at all. It is used in multiplayer only to show score table and MOTD window
-
-## Porting 
-
-### First strategy: full port
-
-#### Basic port (Stage 1)
-* First, remove all files and headers which use vgui (contains "vgui" in file name).
-* After that, try to build it and remove vgui includes.
-* Remove all gViewPort usings.
-* Remove all CVoiceManager usings (xash3d does not support voice)
 * Redefine all DLLEXPORT defines as empty field (Place it under _WIN32 macro if you want to keep windows compatibility).
 * Remove hud_servers.cpp and Servers_Init/Servers_Shutdown from hud.cpp
 * Fix CAPS filenames in includes (like STDIO.H, replace by stdio.h).
-* Replace broken macros as DECLARE_MESSAGE, DECLARE_COMMAND by fixed examples from our hlsdk-xash3d port (cl_util.h)
+* Replace broken macros as DECLARE_MESSAGE, DECLARE_COMMAND by fixed examples from our hlsdk-portable port (cl_util.h)
 * Add ctype.h where it is need (tolower, isspace functions)
 * Add string.h where it is need (memcpy, strcpy, etc)
-* Use in_defs.h from hlsdk_client
-* Add scoreboard_stub.cpp and input_stub.cpp from hlsdk-xash3d to fix linking.
-Now your client should be able to build and work correctly. Add input_xash3d.cpp from hlsdk-xash3d project to fix input.
+* Use in_defs.h from hlsdk-portable
+* Add input_xash3d.cpp from hlsdk-portable project to fix input.
+Now your client should be able to build and work correctly.
 
-#### Multiplayer fix (Stage 2)
-Look at hlsdk-xash3d project.
+# Porting mod to hlsdk-portable
+Look at changes which was made.
 
-Main changes are:
-* Add MOTD.cpp, scoreboard.cpp and input_xash3d.cpp
-* Add missing functions to hud_redraw.cpp, hud.cpp and tri.cpp, fix class defination in hud.h
-* Remove duplicate functions from hud.cpp and HOOK_MESSAGE's for it
-* Remove +showscores/-showscores hooks from input.h
-* Fix cl_util.h
+If there are not too much changes (for example, only some weapons was added), add these changes in hlsdk-portable.
 
-### Second way: move mod to hlsdk-xash3d
-Look at changes you made in client.
+You may use diff with original HLSDK and apply it as patch to hlsdk-portable.
 
-If there are not much changes (for example, only some weapons was add), add these changes in hlsdk-xash3d.
-
-You may use diff with original HLSDK you used and apply it as patch to hlsdk-xash3d.
+NOTE: Many an old mods was made on HLSDK 2.0-2.1 and some rare mods on HLSDK 1.0.
+So you need to have different versions of HLSDK to make diffs.
+Plus different Spirit of Half-Life versions if mod was made on it.
+Also, weapons in old HLSDK versions does not use client weapon prediction system and you may be need to port standart half-life weapons to server side.
 
 Files must have same line endings (use dos2unix on all files).
 
-I recommend to enable ignoring space changes in diff.
-### Writing Makefiles
+We recommend to enable ignoring space changes in diff.
 
-Use Makefile from hlsdk-xash3d as Makefile example.
+Move all new files to separate directories.
 
-Get .c and .cpp file lists from Visual Studio project and fill SRCS and SRCS_C variables to Makefile.
+# Possible replacements for non-portable external dependencies
+1. If mod uses *fmod.dll* or *base.dll* to play mp3/ogg on client-side or to precache sounds on server-side, you can replace it with:
+	- [pfnPrimeMusicStream](https://github.com/FWGS/hlsdk-portable/blob/master/engine/cdll_int.h#L293=) engine callback.
+	- [miniaudio](https://github.com/mackron/miniaudio).
+	- [phonon](https://community.kde.org/Phonon).
 
-Remove all files containing vgui in name from list, add missing include dirs.
+2, If mod uses *OpenGL*, porting code to Xash3D render interface is recommended.
 
-Do same for Android.mk if you are building for android.
+3. If mod uses *cg.dll*, you can try to port code to [NVFX](https://github.com/tlorach/nvFX).
+
+4. If mod uses detours, comment code or try to find replacement somehow by yourself.
+
+# Additional recommendations
+1. If mod uses STL, you can replace it with [MiniUTL](https://github.com/FWGS/MiniUTL).
+2. Avoid to use dynamic casts to make small size binaries.
+3. Avoid to use exceptions to make small size binaries.
+ 
+# Writing build scripts
+
+Use wscript/CMakeLists.txt files from hlsdk-portable as build scripts example.
+
+Get .c and .cpp file lists from Visual Studio project.
+
+Add missing include dirs.
+
